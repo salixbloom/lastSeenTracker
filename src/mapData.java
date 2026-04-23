@@ -1,3 +1,4 @@
+import java.awt.image.BufferedImage;
 import java.util.stream.IntStream;
 
 //TODO JavaDoc idiot
@@ -11,25 +12,41 @@ public class mapData {
     private static final int WEST = -1;
     private static final int EAST = 1;
 
-    private final mapDataPoint[][] theMap;
+    private final mapDataPoint[][] myMap;
+
+    protected BufferedImage renderedMap;
 
     public mapData(final int theNumOfRows, final int theNumOfCols) {
         numOfRows = theNumOfRows;
         numOfCols = theNumOfCols;
-        theMap = new mapDataPoint[theNumOfRows][theNumOfCols];
+        myMap = new mapDataPoint[theNumOfRows][theNumOfCols];
+        renderedMap = new BufferedImage(numOfRows, numOfCols, BufferedImage.TYPE_INT_ARGB);
         IntStream.range(0, numOfRows).forEach(i ->
             IntStream.range(0, numOfCols).forEach(j ->
-                theMap[i][j] = new mapDataPoint()
+                myMap[i][j] = new mapDataPoint()
             )
         );
     }
 
     public void tick() {
         IntStream.range(0, numOfRows).forEach(row ->
-            IntStream.range(0, numOfCols).forEach(col ->
-                spreadPoint(theMap[row][col], row, col)
-            )
+            IntStream.range(0, numOfCols).forEach(col -> {
+                spreadPoint(myMap[row][col], row, col);
+                updateImage(row, col);
+            })
         );
+    }
+
+    private void updateImage(final int theRow, final int theCol) {
+        for (mapDataPoint[] row : myMap) {
+            for (mapDataPoint point : row) {
+                double v = point.fillAmount;
+                int gray = (int)(v * 255);
+                int rgb = (gray << 16) | (gray << 8) | gray;
+
+                renderedMap.setRGB(theRow, theCol, rgb);
+            }
+        }
     }
 
     private void spreadPoint(final mapDataPoint thePoint, final int theRow, final int theCol) {
@@ -51,7 +68,7 @@ public class mapData {
     }
 
     private void increasePoint(final int theRow, final int theCol) {
-        mapDataPoint point = theMap[theRow][theCol];
+        mapDataPoint point = myMap[theRow][theCol];
         point.fillAmount += 0.1;
         if (point.fillAmount > 0.9) {
             point.fillAmount = 1.0;
